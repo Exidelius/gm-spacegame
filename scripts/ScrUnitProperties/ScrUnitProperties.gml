@@ -4,7 +4,8 @@
 /// @param {real} _energy_capacity
 /// @param {real} _speed_limit
 /// @param {real} _acceleration
-function init_object(_max_health, _max_armor, _energy_capacity, _speed_limit, _acceleration) {
+/// @param {real} _rotation_speed
+function init_object(_max_health, _max_armor, _energy_capacity, _speed_limit, _acceleration, _rotation_speed) {
 	// TODO: load saved values or...
 
 	self._max_health = _max_health;
@@ -12,6 +13,7 @@ function init_object(_max_health, _max_armor, _energy_capacity, _speed_limit, _a
 	self._energy_capacity = _energy_capacity;
 	self._speed_limit = _speed_limit;
 	self._acceleration = _acceleration;
+	self._rotation_speed = _rotation_speed;
 	
 	self._current_health = self._max_health;
 	self._current_armor = self._max_armor;
@@ -19,32 +21,59 @@ function init_object(_max_health, _max_armor, _energy_capacity, _speed_limit, _a
 	
 	self._current_speed_horizontal = 0;
 	self._current_speed_vertical = 0;
+	self._object_angle = 0;
+	
+	// TODO: Should be changed by manager object
+	self._space_resistance = 0.05;
 }
 
-/// @description Object movement based on direction
-/// @param {bool} _move_left
-/// @param {bool} _move_right
-/// @param {bool} _move_up
-/// @param {bool} _move_down
-function move(_move_left, _move_right, _move_up, _move_down) {
-	self._current_speed_horizontal = _calculate_speed(self._current_speed_horizontal, _move_right - _move_left);
-	self._current_speed_vertical = _calculate_speed(self._current_speed_vertical, _move_down - _move_up)
+/// @description Move object using directions
+/// @param {real} horizontal_direction -1 or +1
+/// @param {real} vertical_direction -1 or +1
+function move(horizontal_direction, vertical_direction) {
+	_angle_rad = degtorad(self._object_angle);
 	
-	// TODO: check collision
-	x += self._current_speed_horizontal
-	y += self._current_speed_vertical
+	_rotated_x = horizontal_direction * sin(_angle_rad) - vertical_direction * cos(_angle_rad);
+	_rotated_y = horizontal_direction * cos(_angle_rad) + vertical_direction * sin(_angle_rad);
+	
+	self._current_speed_horizontal = _calculate_speed(self._current_speed_horizontal, _rotated_x);
+	self._current_speed_vertical = _calculate_speed(self._current_speed_vertical, _rotated_y);
+	
+	x += self._current_speed_horizontal;
+	y += self._current_speed_vertical;
+}
+
+/// @description Rotate object using target coords
+/// @param {real} x_direction
+/// @param {real} y_direction
+function rotate_to_target(x_direction, y_direction) {
+	_target_angle = point_direction(x, y, x_direction, y_direction);
+	_angle_diff = angle_difference(_target_angle, self._object_angle);
+	
+	self._object_angle += clamp(_angle_diff, -self._rotation_speed, self._rotation_speed);
+	
+	image_angle = self._object_angle;
+	direction = self._object_angle;
+}
+
+/// @description Rotate object using direction
+/// @param {real} rotate_direction -1 to left, +1 to right
+function rotate_manually(rotate_direction) {
+	self._object_angle -= clamp(90 * rotate_direction, -self._rotation_speed, self._rotation_speed);
+	
+	image_angle = self._object_angle;
+	direction = self._object_angle;
 }
 
 /// @description Calculate speed
-/// @param {real} _current_value
-/// @param {real} _speed_direction
-/// @return {real}
-function _calculate_speed(_current_value, _speed_direction) {
-	if _speed_direction != 0 {
-		return _current_value + (_speed_direction * self._speed_limit - _current_value) * self._acceleration;
+/// @param {real} current_value
+/// @param {real} speed_direction
+/// @return {real} Calculated speed with acceleration or space resistance
+function _calculate_speed(current_value, speed_direction) {
+	if speed_direction != 0 {
+		return current_value + (speed_direction * self._speed_limit - current_value) * self._acceleration;
 	}
 	else {
-		// TODO: add space resistance value instead of 0.1
-		return _current_value - 0.1 * _current_value;
+		return current_value * (1 - self._space_resistance);
 	}
 }
