@@ -1,9 +1,9 @@
 {
   "$GMScript":"v1",
-  "%Name":"ScrUnitProperties",
+  "%Name":"ScrGunProperties",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"ScrUnitProperties",
+  "name":"ScrGunProperties",
   "parent":{
     "name":"Scripts",
     "path":"folders/Scripts.yy",
